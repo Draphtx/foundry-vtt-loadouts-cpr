@@ -1,8 +1,8 @@
 {
-    "title": "Foundry VTT Loadouts - Cyberpunk Red",
+    "title": "Loadouts: Cyberpunk Red",
     "name": "loadouts-cpr",
     "id": "loadouts-cpr",
-    "description": "Cyberpunk Red Core extensions for Foundry VTT Loadouts.",
+    "description": "Cyberpunk Red Core extensions for Foundry VTT Loadouts",
     "authors": [
       {
         "name": "draphtx",
@@ -18,6 +18,8 @@
         "verified": "10.291"
     },
     "scripts": [
+      "scripts/constants.js",
+      "scripts/cprConfig.js",
       "scripts/cprToken.js"
     ],
     "packs": [
