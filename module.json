@@ -17,6 +17,15 @@
         "minimum": 10,
         "verified": "10.291"
     },
+    "relationships": {
+      "requires": [
+        {
+          "id": "loadouts",
+          "type": "module",
+          "compatibility": {}
+        }
+      ]
+    },
     "scripts": [
       "scripts/constants.js",
       "scripts/cprConfig.js",
