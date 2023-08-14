@@ -12,16 +12,13 @@ Hooks.on('loadoutsReady', function() {
                 "excellent": 1
             }    
             const statusIconMap = {
-                "equipped": "modules/loadouts/artwork/icons/status-equipped.webp",
-                "carried": "",
-                "owned": ""
+                "equipped": game.settings.get("loadouts-cpr", "loadouts-cpr-equipped-overlay"),
+                "carried": game.settings.get("loadouts-cpr", "loadouts-cpr-carried-overlay"),
+                "owned": game.settings.get("loadouts-cpr", "loadouts-cpr-owned-overlay"),
             }
-    
-            // Set the token's 'health' bar to represent magazine contents, if available
-            // TODO: Look at giving each weapon actor one of its own items in its inventory; then we can use the
-            //// magazine attribute to fill the bars instead of hijacking hp
             
-            if(("magazine" in this.itemDocument.system) && (this.itemDocument.system.magazine.max != 0)){
+            // Set the token's 'health' bar to represent magazine contents, if available
+            if(this.itemDocument.flags?.loadouts?.stack?.max > 1){
                 this.itemTokenSettings.displayBars = 50;  // Set visibility for the 'hp' bar
                 this.itemTokenSettings.actorData = {
                     system: {
@@ -33,16 +30,30 @@ Hooks.on('loadoutsReady', function() {
                         }
                     }
                 }
-            }
-    
-            // Set equipped state overlays where desired
-            if(this.itemDocument.system.equipped){
-                this.itemTokenSettings.overlayEffect = statusIconMap[this.itemDocument.system.equipped]
+            } else {
+                if(("magazine" in this.itemDocument.system) && (this.itemDocument.system.magazine.max != 0)){
+                    this.itemTokenSettings.displayBars = 50;  // Set visibility for the 'hp' bar
+                    this.itemTokenSettings.actorData = {
+                        system: {
+                            derivedStats: {
+                                hp: {
+                                    max: this.itemDocument.system.magazine.max,
+                                    value: this.itemDocument.system.magazine.value
+                                }
+                            }
+                        }
+                    }
+                }
+        
+                // Set equipped state overlays where desired
+                if(this.itemDocument.system.equipped){
+                    this.itemTokenSettings.overlayEffect = statusIconMap[this.itemDocument.system.equipped]
+                }
             }
         }
     }
-    
+
     // Now you can safely register with LoadoutsRegistry or perform other setup tasks
-    console.log("▞▖Loadouts: loaded Cyberpunk Red Loadouts module")
+    console.log("▞▖Loadouts CPR: loaded Cyberpunk Red Loadouts module")
     window.LoadoutsRegistry.registerTokenClass("cyberpunk-red-core", CyberpunkRedLoadoutsToken);
 });
