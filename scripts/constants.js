@@ -1,7 +1,7 @@
 export const statusIconMap = {
-    "equipped": game.settings.get("loadouts-cpr", "loadouts-cpr-equipped-overlay"),
-    "carried": game.settings.get("loadouts-cpr", "loadouts-cpr-carried-overlay"),
-    "owned": game.settings.get("loadouts-cpr", "loadouts-cpr-owned-overlay"),
+    "equipped": game.settings.get("loadouts", "loadouts-cpr-equipped-overlay"),
+    "carried": game.settings.get("loadouts", "loadouts-cpr-carried-overlay"),
+    "owned": game.settings.get("loadouts", "loadouts-cpr-owned-overlay"),
 };
 
 export const dispositionMap = {

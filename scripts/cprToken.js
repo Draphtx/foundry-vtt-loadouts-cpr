@@ -7,8 +7,10 @@ Hooks.on('loadoutsReady', function() {
             console.log("Preparing CPR item")
 
             // Set the token's 'health' bar to represent magazine contents, if available and desired
+            // TODO: Does this just move to the main module? Also, maybe bar2 for stacks and bar1 for child module stuff like magazines?
+            //// But in such a case we won't be able to handle visibility independently.
             if(this.itemDocument.flags?.loadouts?.stack?.max > 1){
-                this.itemTokenSettings.displayBars = game.settings.get("loadouts-cpr", "loadouts-cpr-show-stack-bar") ? 50 : 0, // Set visibility for the 'hp' bar
+                this.itemTokenSettings.displayBars = game.settings.get("loadouts", "loadouts-show-stack-bar"), // Set visibility for the 'hp' bar
                 this.itemTokenSettings.actorData = {
                     system: {
                         derivedStats: {
@@ -21,7 +23,7 @@ Hooks.on('loadoutsReady', function() {
                 }
             } else {
                 if(("magazine" in this.itemDocument.system) && (this.itemDocument.system.magazine.max != 0)){
-                    this.itemTokenSettings.displayBars = game.settings.get("loadouts-cpr", "loadouts-cpr-show-ammo-bar") ? 50 : 0,
+                    this.itemTokenSettings.displayBars = game.settings.get("loadouts", "loadouts-cpr-show-ammo-bar"),
                     this.itemTokenSettings.actorData = {
                         system: {
                             derivedStats: {
