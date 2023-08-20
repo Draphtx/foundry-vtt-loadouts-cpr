@@ -1,116 +1,93 @@
 import { statusIconMap } from './constants.js';
 
-Hooks.on('loadoutsReady', function() {
-    class CyberpunkRedLoadoutsToken extends LoadoutsRegistry.tokenClasses.default {
-        defineToken() {
-            super.defineToken();  // This calls the defineToken method of LoadoutsToken
-            console.log("Preparing CPR item")
+class CyberpunkRedLoadoutsToken extends LoadoutsRegistry.tokenClasses.default {
+    defineNewToken() {
+        super.defineNewToken();  // This calls the defineToken method of LoadoutsToken
+        console.log("Preparing CPR item")
 
-            // Set the token's 'health' bar to represent magazine contents, if available and desired
-            // TODO: Does this just move to the main module? Also, maybe bar2 for stacks and bar1 for child module stuff like magazines?
-            //// But in such a case we won't be able to handle visibility independently.
-            if(this.itemDocument.flags?.loadouts?.stack?.max > 1){
-                this.itemTokenSettings.displayBars = game.settings.get("loadouts", "loadouts-show-stack-bar"), // Set visibility for the 'hp' bar
+        if(this.objectDocument.flags?.loadouts?.stack?.max > 1){
+            this.itemTokenSettings.displayBars = game.settings.get("loadouts", "loadouts-show-stack-bar"), // Set visibility for the 'hp' bar
+            this.itemTokenSettings.actorData = {
+                system: {
+                    derivedStats: {
+                        hp: {
+                            max: this.objectDocument.flags.loadouts.stack.max,
+                            value: this.objectDocument.flags.loadouts.stack.members.length
+                        }
+                    }
+                }
+            }
+        } else {
+            if(("magazine" in this.objectDocument.system) && (this.objectDocument.system.magazine.max != 0)){
+                this.itemTokenSettings.displayBars = game.settings.get("loadouts", "loadouts-cpr-show-ammo-bar"),
                 this.itemTokenSettings.actorData = {
                     system: {
                         derivedStats: {
                             hp: {
-                                max: this.itemDocument.system.magazine.max,
-                                value: this.itemDocument.system.magazine.value
+                                max: this.objectDocument.system.magazine.max,
+                                value: this.objectDocument.system.magazine.value
                             }
                         }
                     }
                 }
-            } else {
-                if(("magazine" in this.itemDocument.system) && (this.itemDocument.system.magazine.max != 0)){
-                    this.itemTokenSettings.displayBars = game.settings.get("loadouts", "loadouts-cpr-show-ammo-bar"),
-                    this.itemTokenSettings.actorData = {
-                        system: {
-                            derivedStats: {
-                                hp: {
-                                    max: this.itemDocument.system.magazine.max,
-                                    value: this.itemDocument.system.magazine.value
-                                }
-                            }
-                        }
-                    }
-                }
+            }
+    
+            // Set equipped state overlays where desired
+            if(this.objectDocument.system.equipped){
+                this.itemTokenSettings.overlayEffect = statusIconMap[this.objectDocument.system.equipped]
+            };
+        };
+    };
+};
+
+class CyberpunkRedLoadoutsItem extends LoadoutsRegistry.itemClasses.default {
+    processUpdatedItem() {
+        super.processUpdatedItem();
+
+        const loadoutsScenes = game.scenes.filter(
+            scene => scene.flags.loadouts).filter(
+                scene => scene.flags.loadouts.isLoadoutsScene == true);
         
-                // Set equipped state overlays where desired
-                if(this.itemDocument.system.equipped){
-                    this.itemTokenSettings.overlayEffect = statusIconMap[this.itemDocument.system.equipped]
-                }
-            }
-        }
-    }
+        const loadoutsItemToken = undefined
+        for(const loadoutsScene of loadoutsScenes){
+            loadoutsItemToken = game.scenes.get(loadoutsScene.id).tokens.contents.find(token => 
+                token.flags.loadouts?.stack?.members?.includes(objectDocument.id))
+            if(loadoutsItemToken){
+                break;
+            };
+        };
 
-    // Now you can safely register with LoadoutsRegistry or perform other setup tasks
-    console.log("%c▞▖Loadouts CPR: loaded Cyberpunk Red Loadouts module", 'color:#ff4bff')
+        if((loadoutsItemToken == null) || (loadoutsItemToken == undefined)){
+            console.warn("▞▖Loadouts CPR: Loadouts item not found; cannot reflect " + objectDocument.parent.name + "'s inventory change")
+            return;
+        };
+    
+        if(objectDocument.system.magazine.max != 0){
+            loadoutsItemToken.update({
+                actorData: {
+                    system: {
+                        derivedStats: {
+                            hp: {
+                                value: objectDocument.system.magazine.value
+                            }
+                        }
+                    }
+                }
+            });
+        };
+        
+        // Update the linked token's overlay if the item is equipped
+        console.debug("▞▖Loadouts CPR: changing equip status")
+        if(objectDocument.system.equipped){
+            loadoutsItemToken.update({
+                overlayEffect: statusIconMap[objectDocument.system.equipped]
+            });
+        };
+    };
+};
+
+Hooks.on('loadoutsReady', function() {
     window.LoadoutsRegistry.registerTokenClass("cyberpunk-red-core", CyberpunkRedLoadoutsToken);
+    window.LoadoutsRegistry.registerItemClass("cyberpunk-red-core", CyberpunkRedLoadoutsItem);
+    console.log("%c▞▖Loadouts CPR: loaded Cyberpunk Red Loadouts module", 'color:#ff4bff')
 });
-
-Hooks.on("updateItem", (document, options, userid) => updateCPRToken(document));
-
-async function updateCPRToken(itemDocument){
-    // When items are updated in the backend, we don't need to worry about them
-    if((itemDocument.parent == null) || (itemDocument.parent == undefined)){ return; }
-    
-    // Don't bother with items that have not been linked to a loadout token
-    if(itemDocument?.flags?.loadouts?.configured !== true){ return; }
-    
-    const loadoutsScenes = game.scenes.filter(
-        scene => scene.flags.loadouts).filter(
-            scene => scene.flags.loadouts.isLoadoutsScene == true)
-    
-    var loadoutsItemToken = undefined
-    for(const loadoutsScene of loadoutsScenes){
-        loadoutsItemToken = game.scenes.get(loadoutsScene.id).tokens.contents.find(token => 
-            token.flags.loadouts?.stack?.members?.includes(itemDocument.id))
-        if(loadoutsItemToken){
-            break;
-        }
-    }
-
-    if((loadoutsItemToken == null) || (loadoutsItemToken == undefined)){
-        console.warn("▞▖Loadouts CPR: Loadouts item not found; cannot reflect " + itemDocument.parent.name + "'s inventory change")
-        return;
-    }
-
-    // Use the token's health bar to represent stack amount, if item is stackable
-    if(itemDocument.flags?.loadouts?.stack?.max > 1){
-        loadoutsItemToken.update({
-            actorData: {
-                system: {
-                    derivedStats: {
-                        hp: {
-                            value: itemDocument.flags.loadouts.stack.members.length
-                        }
-                    }
-                }
-            }
-        })
-    } else if(itemDocument.system.magazine.max != 0){
-        loadoutsItemToken.update({
-            actorData: {
-                system: {
-                    derivedStats: {
-                        hp: {
-                            value: itemDocument.system.magazine.value
-                        }
-                    }
-                }
-            }
-        })
-    }
-    
-    // Update the linked token's overlay if the item is equipped
-    console.debug("▞▖Loadouts CPR: changing equip status")
-    if(itemDocument.system.equipped){
-        loadoutsItemToken.update({
-            overlayEffect: statusIconMap[itemDocument.system.equipped]
-        })
-    }
-
-    Hooks.off("updateItem");
-    return;
-}

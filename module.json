@@ -26,10 +26,12 @@
         }
       ]
     },
-    "scripts": [
+    "esmodules": [
       "scripts/constants.js",
-      "scripts/cprConfig.js",
       "scripts/cprToken.js"
+    ],
+    "scripts": [
+      "scripts/cprConfig.js"
     ],
     "packs": [
     {
